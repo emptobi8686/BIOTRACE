@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -24,11 +24,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { addDelivery } from '@/store/deliveries'
+import { addDelivery, syncDeliveriesFromSupabase } from '@/store/deliveries'
 import { fileToEvidence, formatFileSize, evidenceKindLabel } from '@/lib/evidence'
 import { getDemoUserByRole, useDemoSession } from '@/lib/demo-session'
 import { suppliers, plants, BIOMASS_TYPES } from '@/data/catalog'
-import type { EvidenceFile, EvidenceKind } from '@/types'
+import { DATA_MODE } from '@/lib/data-access'
+import { createDeliveryInSupabase, listApprovedPlants, listApprovedSuppliers } from '@/lib/deliveries-supabase'
+import { useOrganizations } from '@/lib/organization-context'
+import type { EvidenceFile, EvidenceKind, PlantOption, SupplierOption } from '@/types'
 
 // ── Schema ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +78,11 @@ export function SubmitDeliveryPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [globalError, setGlobalError] = useState('')
 
+  const { activeOrganization } = useOrganizations()
+  const isSupabase = DATA_MODE === 'supabase'
+  const [availableSuppliers, setAvailableSuppliers] = useState<SupplierOption[]>(suppliers)
+  const [availablePlants, setAvailablePlants] = useState<PlantOption[]>(plants)
+
   const { role: activeRole, setRole } = useDemoSession()
   const demoSupplierUser = getDemoUserByRole('supplier')
 
@@ -98,11 +106,40 @@ export function SubmitDeliveryPage() {
     },
   })
 
+  useEffect(() => {
+    if (!isSupabase) return
+    let active = true
+
+    void Promise.all([listApprovedSuppliers(), listApprovedPlants()]).then(
+      ([supData, plantData]) => {
+        if (!active) return
+        if (supData.length > 0) setAvailableSuppliers(supData)
+        if (plantData.length > 0) setAvailablePlants(plantData)
+      },
+    )
+
+    if (
+      activeOrganization &&
+      ['supplier', 'biomass_aggregator'].includes(activeOrganization.organizationType)
+    ) {
+      setValue('supplierId', activeOrganization.id, { shouldValidate: true })
+    }
+
+    return () => {
+      active = false
+    }
+  }, [isSupabase, activeOrganization, setValue])
+
   const watchedSupplierId = watch('supplierId')
   const watchedPlantId = watch('plantId')
   const watchedBiomassType = watch('biomassType')
 
-  if (activeRole !== 'supplier') {
+  const isAuthorizedInSupabase =
+    isSupabase &&
+    activeOrganization &&
+    ['supplier', 'biomass_aggregator'].includes(activeOrganization.organizationType)
+
+  if (!isSupabase && activeRole !== 'supplier') {
     return (
       <>
         <Header
@@ -122,6 +159,34 @@ export function SubmitDeliveryPage() {
               </p>
               <Button type="button" onClick={() => setRole('supplier')}>
                 Switch to supplier role
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+      </>
+    )
+  }
+
+  if (isSupabase && !isAuthorizedInSupabase) {
+    return (
+      <>
+        <Header
+          title="Add a delivery"
+          subtitle="Approved supplier membership required"
+        />
+
+        <main className="flex flex-1 items-start justify-center px-4 py-10 sm:px-6">
+          <Card className="w-full max-w-md shadow-none">
+            <CardHeader>
+              <CardTitle>Organization approval required</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Only approved biomass supplier or aggregator organizations may declare and
+                dispatch biomass shipments to cement plants.
+              </p>
+              <Button asChild>
+                <Link to="/onboarding">View organization status</Link>
               </Button>
             </CardContent>
           </Card>
@@ -161,7 +226,7 @@ export function SubmitDeliveryPage() {
 
   // ── Form submit ───────────────────────────────────────────────────────────
 
-  function onSubmit(values: FormValues) {
+  async function onSubmit(values: FormValues) {
     setGlobalError('')
     if (pendingEvidence.length === 0) {
       setEvidenceError('Attach at least one supporting document (delivery note, photo, etc.).')
@@ -169,10 +234,26 @@ export function SubmitDeliveryPage() {
     }
     setIsSubmitting(true)
     try {
+      if (isSupabase) {
+        const deliveryId = await createDeliveryInSupabase({
+          supplierOrgId: values.supplierId,
+          plantOrgId: values.plantId,
+          biomassType: values.biomassType,
+          originLocation: values.originLocation,
+          declaredQuantityT: values.declaredQuantityT,
+          deliveryDate: values.deliveryDate,
+          vehicleReference: values.vehicleReference ?? '',
+          notes: values.notes ?? '',
+        })
+        await syncDeliveriesFromSupabase()
+        navigate(`/deliveries/${deliveryId}`)
+        return
+      }
+
       const supplierName =
-        suppliers.find((s) => s.id === values.supplierId)?.name ?? values.supplierId
+        availableSuppliers.find((s) => s.id === values.supplierId)?.name ?? values.supplierId
       const plantName =
-        plants.find((p) => p.id === values.plantId)?.name ?? values.plantId
+        availablePlants.find((p) => p.id === values.plantId)?.name ?? values.plantId
 
       const delivery = addDelivery({
         supplierId: values.supplierId,
@@ -233,7 +314,7 @@ export function SubmitDeliveryPage() {
                       <SelectValue placeholder="Select supplier…" />
                     </SelectTrigger>
                     <SelectContent>
-                      {suppliers.map((s) => (
+                      {availableSuppliers.map((s) => (
                         <SelectItem key={s.id} value={s.id}>
                           {s.name} — {s.location}
                         </SelectItem>
@@ -254,7 +335,7 @@ export function SubmitDeliveryPage() {
                       <SelectValue placeholder="Select plant…" />
                     </SelectTrigger>
                     <SelectContent>
-                      {plants.map((p) => (
+                      {availablePlants.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
                           {p.name} — {p.location}
                         </SelectItem>

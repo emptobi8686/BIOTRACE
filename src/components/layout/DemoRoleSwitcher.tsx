@@ -7,14 +7,14 @@ export function DemoRoleSwitcher() {
   const { role, setRole } = useDemoSession()
 
   return (
-    <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-2.5 py-1.5">
+    <div className="flex min-w-0 items-center gap-1 rounded-lg border border-border bg-muted/50 px-1.5 py-1 sm:gap-2 sm:px-2.5">
       <div className="hidden text-left sm:block">
         <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
           Demo role
         </p>
       </div>
       <Select value={role} onValueChange={(nextRole) => setRole(nextRole as UserRole)}>
-        <SelectTrigger className="h-8 w-32 border-none bg-transparent px-2 text-xs shadow-none focus:ring-0 sm:w-40">
+        <SelectTrigger className="h-9 w-[6.75rem] border-none bg-transparent px-1.5 text-xs shadow-none focus-visible:ring-2 sm:h-8 sm:w-40 sm:px-2 [&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:overflow-hidden [&_[data-slot=select-value]]:text-ellipsis">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

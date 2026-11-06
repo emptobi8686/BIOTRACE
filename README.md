@@ -20,7 +20,7 @@ BIOTRACE connects biomass suppliers, cement plants, independent reviewers, and b
 | Styling | Tailwind CSS v4, shadcn/ui (radix-nova) |
 | Forms | React Hook Form 7 + Zod |
 | Icons | Lucide React |
-| State | In-memory store (Supabase in Milestone 4) |
+| State | Explicit demo store or Supabase Auth and onboarding |
 
 ---
 
@@ -33,11 +33,40 @@ npm run dev
 
 Open `http://127.0.0.1:5173` in your browser.
 
+Copy the matching checked-in template to its ignored local file, or configure
+separate variables in each deployment environment. Use Vite's environment modes
+to keep hosted development, staging, and production projects separate:
+
+| Environment | Vite env file / deployment variables | Data mode |
+|---|---|---|
+| Development | `.env.development.example` → `.env.development.local` | `demo` for intentional walkthroughs; otherwise `supabase` with the development project |
+| Staging | `.env.staging.example` → `.env.staging.local` or staging CI variables | `supabase` with the staging project |
+| Production | `.env.production.example` → `.env.production.local` or production variables | `supabase` with the production project |
+
+Supply `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from the matching hosted
+project's Supabase Dashboard. The anon key is intended for browser use; never put
+a service-role key in Vite environment variables. An unset mode never falls back
+to demo data. Production builds do not display demo records when the backend is
+unavailable. Demo mode must be selected explicitly for any build intentionally
+used as a demo.
+
 ```bash
 npm run build    # production build (tsc + vite)
 npm run lint     # oxlint
 npm run preview  # serve the production build locally
 ```
+
+Supabase mode currently provides email/password authentication, session
+restoration, password reset/update, auth callbacks, profile provisioning, and
+organization registration with verification status. Migrations `003` and `004`
+are additive to migrations `001` and `002` and have been applied to the
+configured Development project. Delivery workflows and evidence storage still
+use the demo implementation and are not persisted to Supabase.
+
+Configure allowed auth redirect URLs and email verification/password-reset
+templates in the hosted Supabase Dashboard. Email delivery and signup behavior
+depend on the Development project's Auth settings and SMTP configuration.
+Never put a service-role key in the frontend.
 
 ---
 
@@ -68,15 +97,20 @@ npm run preview  # serve the production build locally
 - MRV calculation view at `/review/:id/mrv`: full input breakdown, factor sources, assumptions, limitations
 - Calculation based on ACM0003 v9.0 structure — labelled illustrative, not certified
 
-### 🔲 Milestone 3 — Roles, permissions, data model
-- Role-permission matrix
-- Complete relational schema
-- Row Level Security policies
+### ✅ Backend Milestone 1 — Supabase foundation
+- Typed Supabase JavaScript client with validated environment configuration
+- Additive schema for organizations, facilities, verification, workflow history,
+  reviewer assignments, and audit records
+- Development project verified with 20 RLS-enabled public tables and read-scoped
+  authenticated policies
 
-### 🔲 Milestone 4 — Authentication and persistent storage
-- Supabase Auth
-- PostgreSQL schema and migrations
-- Protected routes, role-aware onboarding
+### 🚧 Backend Milestone 2 — Authentication and organization onboarding
+- Supabase email/password signup, login, logout, session restoration, email
+  callback, password recovery, and password update
+- Auth-triggered profile provisioning and organization verification status
+- Trusted RPCs for registration, membership additions, and administrator review
+- Delivery persistence, evidence Storage, invitations, and full organization
+  administration are not yet implemented
 
 ### 🔲 Milestone 5–7 — Projects, marketplace, admin
 ### 🔲 Milestone 8 — Testing, deployment, pitch
@@ -100,6 +134,11 @@ npm run preview  # serve the production build locally
 - Data resets on page refresh (in-memory store, no database yet).
 - Evidence files are stored as browser object URLs only — they are not uploaded anywhere.
 - Emissions calculations are illustrative. The 0.72 tCO₂e / t figure from an earlier version has been removed. The MRV module uses documented ACM0003 factors with explicit limitations.
-- No authentication. All users see all data.
-- No role enforcement. Role restrictions are documented but not yet enforced in the UI or backend.
+- Demo mode has no authentication or role enforcement; all users see demo data.
+- Supabase authentication protects the onboarding routes, but the delivery and
+  review workflows are not yet connected to authenticated database operations.
+- Organization membership creation is limited to the registering owner and the
+  trusted add-member RPC; there is no invitation UI.
+- Email verification and password reset require correctly configured hosted
+  Supabase redirect URLs and email delivery.
 - Marketplace and project pages are placeholders.

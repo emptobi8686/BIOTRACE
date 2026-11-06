@@ -1,5 +1,4 @@
 /// <reference types="vitest/config" />
-
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
@@ -20,6 +19,20 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     open: true,
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('lucide-react')) return 'vendor-icons'
+          if (id.includes('@supabase')) return 'vendor-supabase'
+          if (id.includes('react-hook-form') || id.includes('@hookform') || id.includes('zod')) return 'vendor-forms'
+          if (id.includes('radix-ui') || id.includes('class-variance-authority') || id.includes('clsx') || id.includes('tailwind-merge')) return 'vendor-ui'
+          if (id.includes('node_modules/react') || id.includes('react-dom') || id.includes('react-router')) return 'vendor-react'
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
   },
   optimizeDeps: {
     include: [

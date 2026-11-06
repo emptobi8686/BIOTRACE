@@ -59,16 +59,16 @@ export function ReviewQueuePage() {
 
       <main className="flex-1 space-y-5 px-4 py-6 sm:px-6">
         {/* Summary chips */}
-        <div className="flex flex-wrap gap-3">
-          <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-1.5 text-sm">
-            <span className="font-semibold text-sky-900">{awaitingCount}</span>
-            <span className="ml-1.5 text-sky-700">awaiting review</span>
-          </div>
+        <div className="flex flex-wrap gap-2">
+          <span className="status-badge status-badge--info">
+            <span className="font-semibold">{awaitingCount}</span>
+            <span>awaiting review</span>
+          </span>
           {correctionCount > 0 && (
-            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm">
-              <span className="font-semibold text-amber-900">{correctionCount}</span>
-              <span className="ml-1.5 text-amber-700">corrections requested</span>
-            </div>
+            <span className="status-badge status-badge--warning">
+              <span className="font-semibold">{correctionCount}</span>
+              <span>corrections requested</span>
+            </span>
           )}
         </div>
 

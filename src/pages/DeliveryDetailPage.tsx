@@ -152,7 +152,7 @@ export function DeliveryDetailPage() {
         <div className="flex flex-wrap items-center gap-3">
           <DeliveryStatusBadge status={delivery.status} />
           {discrepancy !== null && Math.abs(discrepancy) > 0.05 && (
-            <div className="flex items-center gap-1.5 rounded-md border border-amber-300/80 bg-amber-50 px-2.5 py-1 text-xs text-amber-900">
+            <div className="flex items-center gap-1.5 rounded-md border border-[color:var(--status-warning)] bg-[color:var(--status-warning-subtle)] px-2.5 py-1 text-xs text-[color:var(--status-warning)]">
               <AlertTriangle className="size-3.5 shrink-0" aria-hidden />
               {discrepancy > 0 ? '+' : ''}
               {discrepancy.toFixed(2)} t vs declared

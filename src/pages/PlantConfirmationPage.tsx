@@ -23,10 +23,12 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { useDelivery } from '@/store/useDeliveries'
-import { updateDeliveryStatus, addEvidenceToDelivery } from '@/store/deliveries'
+import { updateDeliveryStatus, addEvidenceToDelivery, syncDeliveriesFromSupabase } from '@/store/deliveries'
 import { fileToEvidence, formatFileSize, evidenceKindLabel } from '@/lib/evidence'
 import { getDemoUserByRole, useDemoSession } from '@/lib/demo-session'
 import { formatDate } from '@/lib/labels'
+import { DATA_MODE } from '@/lib/data-access'
+import { confirmPlantDeliveryInSupabase, submitDeliveryForReviewInSupabase } from '@/lib/deliveries-supabase'
 import type { EvidenceFile } from '@/types'
 
 // ── Schema ───────────────────────────────────────────────────────────────────
@@ -194,7 +196,7 @@ export function PlantConfirmationPage() {
 
   // ── Submit ───────────────────────────────────────────────────────────────
 
-  function onSubmit(values: FormValues) {
+  async function onSubmit(values: FormValues) {
     setGlobalError('')
 
     if (!activeDelivery) {
@@ -205,6 +207,23 @@ export function PlantConfirmationPage() {
 
     setIsSubmitting(true)
     try {
+      if (DATA_MODE === 'supabase') {
+        await confirmPlantDeliveryInSupabase({
+          deliveryId: activeDelivery.id,
+          decision: values.decision === 'confirm' ? 'confirmed' : 'disputed',
+          measuredQuantityT: values.measuredQuantityT,
+          disputeReason: values.discrepancyNote,
+        })
+
+        if (values.decision === 'confirm' && values.sendToReview) {
+          await submitDeliveryForReviewInSupabase(activeDelivery.id)
+        }
+
+        await syncDeliveriesFromSupabase()
+        navigate(`/deliveries/${activeDelivery.id}`)
+        return
+      }
+
       const toStatus = values.decision === 'confirm'
         ? (values.sendToReview ? 'awaiting_review' : 'confirmed')
         : 'disputed'
@@ -435,7 +454,7 @@ export function PlantConfirmationPage() {
                     <Label htmlFor="discrepancyNote">
                       Discrepancy explanation *
                     </Label>
-                    <div className="flex gap-2 rounded-md border border-amber-300/80 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                    <div className="flex gap-2 rounded-md border border-[color:var(--status-warning)] bg-[color:var(--status-warning-subtle)] px-3 py-2 text-sm text-[color:var(--status-warning)]">
                       <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
                       <p>
                         Disputing a delivery flags it for investigation. Provide a clear

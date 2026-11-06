@@ -13,10 +13,12 @@ import type {
 } from '@/types'
 import { seedDeliveries, demoUsers } from '@/data/seed-deliveries'
 import { createId, nextDeliveryReference } from '@/lib/delivery-ids'
+import { DATA_MODE } from '@/lib/data-access'
+import { listDeliveriesFromSupabase } from '@/lib/deliveries-supabase'
 
 type Listener = () => void
 
-let _deliveries: Delivery[] = [...seedDeliveries]
+let _deliveries: Delivery[] = DATA_MODE === 'supabase' ? [] : [...seedDeliveries]
 const _listeners = new Set<Listener>()
 
 function notify() {
@@ -34,6 +36,19 @@ export function getDeliveries(): Delivery[] {
 
 export function getDelivery(id: string): Delivery | undefined {
   return _deliveries.find((d) => d.id === id)
+}
+
+export async function syncDeliveriesFromSupabase(): Promise<Delivery[]> {
+  if (DATA_MODE !== 'supabase') return _deliveries
+  try {
+    const remote = await listDeliveriesFromSupabase()
+    _deliveries = remote
+    notify()
+    return remote
+  } catch (err) {
+    console.warn('Failed to sync deliveries from Supabase:', err)
+    return _deliveries
+  }
 }
 
 export function addDelivery(

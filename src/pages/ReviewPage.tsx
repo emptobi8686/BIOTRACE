@@ -83,12 +83,12 @@ function EvidenceItem({ file }: { file: EvidenceFile }) {
 // ── Past review card ──────────────────────────────────────────────────────────
 
 function PastReviewCard({ review }: { review: ReviewDecision }) {
-  const color =
+  const colorClass =
     review.decision === 'approved'
-      ? 'border-emerald-200 bg-emerald-50'
+      ? 'border-[color:var(--status-success)] bg-[color:var(--status-success-subtle)]'
       : review.decision === 'rejected'
-        ? 'border-red-200 bg-red-50'
-        : 'border-amber-200 bg-amber-50'
+        ? 'border-[color:var(--status-error)] bg-[color:var(--status-error-subtle)]'
+        : 'border-[color:var(--status-warning)] bg-[color:var(--status-warning-subtle)]'
   const label =
     review.decision === 'approved'
       ? 'Approved'
@@ -97,7 +97,7 @@ function PastReviewCard({ review }: { review: ReviewDecision }) {
         : 'Corrections requested'
 
   return (
-    <div className={`rounded-md border px-3 py-2.5 ${color}`}>
+    <div className={`rounded-md border px-3 py-2.5 ${colorClass}`}>
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-medium text-foreground">{label}</p>
         <p className="text-xs text-muted-foreground">{formatDateTime(review.timestamp)}</p>
@@ -151,10 +151,10 @@ function MrvSection({ delivery }: { delivery: ReturnType<typeof useDelivery> }) 
   const ncvEntry = NCV_GJ_PER_T[delivery.biomassType]
   const statusColor =
     result.status === 'complete'
-      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+      ? 'border-[color:var(--status-success)] bg-[color:var(--status-success-subtle)] text-[color:var(--status-success)]'
       : result.status === 'illustrative'
-        ? 'border-amber-200 bg-amber-50 text-amber-900'
-        : 'border-red-200 bg-red-50 text-red-900'
+        ? 'border-[color:var(--status-warning)] bg-[color:var(--status-warning-subtle)] text-[color:var(--status-warning)]'
+        : 'border-[color:var(--status-error)] bg-[color:var(--status-error-subtle)] text-[color:var(--status-error)]'
 
   return (
     <Card className="shadow-none">
@@ -227,7 +227,7 @@ function MrvSection({ delivery }: { delivery: ReturnType<typeof useDelivery> }) 
             {result.warnings.map((w, i) => (
               <div
                 key={i}
-                className="flex gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+                className="flex gap-2 rounded-md border border-[color:var(--status-warning)] bg-[color:var(--status-warning-subtle)] px-3 py-2 text-xs text-[color:var(--status-warning)]"
               >
                 <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                 <p>{w}</p>
@@ -484,8 +484,8 @@ export function ReviewPage() {
             <div
               className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs ${
                 Math.abs(variancePct ?? 0) > 3
-                  ? 'border-red-200 bg-red-50 text-red-900'
-                  : 'border-amber-200 bg-amber-50 text-amber-900'
+                  ? 'border-[color:var(--status-error)] bg-[color:var(--status-error-subtle)] text-[color:var(--status-error)]'
+                  : 'border-[color:var(--status-warning)] bg-[color:var(--status-warning-subtle)] text-[color:var(--status-warning)]'
               }`}
             >
               <AlertTriangle className="size-3.5 shrink-0" aria-hidden />
@@ -541,7 +541,7 @@ export function ReviewPage() {
                   ))}
                 </dl>
                 {delivery.discrepancyNote && (
-                  <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                  <div className="mt-3 rounded-md border border-[color:var(--status-warning)] bg-[color:var(--status-warning-subtle)] px-3 py-2 text-xs text-[color:var(--status-warning)]">
                     <strong>Discrepancy note:</strong> {delivery.discrepancyNote}
                   </div>
                 )}
@@ -564,7 +564,7 @@ export function ReviewPage() {
               </CardHeader>
               <CardContent>
                 {delivery.evidence.length === 0 ? (
-                  <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-900">
+                  <div className="rounded-md border border-[color:var(--status-error)] bg-[color:var(--status-error-subtle)] px-3 py-2.5 text-sm text-[color:var(--status-error)]">
                     <strong>No evidence attached.</strong> This delivery cannot be approved
                     without supporting documents.
                   </div>
@@ -604,21 +604,21 @@ export function ReviewPage() {
                             value: 'approved',
                             label: 'Approve',
                             icon: CheckCircle2,
-                            active: 'border-emerald-500 bg-emerald-50 text-emerald-800',
+                            active: 'border-[color:var(--status-success)] bg-[color:var(--status-success-subtle)] text-[color:var(--status-success)]',
                             inactive: 'border-border text-muted-foreground',
                           },
                           {
                             value: 'corrections_requested',
                             label: 'Request corrections',
                             icon: MessageSquare,
-                            active: 'border-amber-400 bg-amber-50 text-amber-900',
+                            active: 'border-[color:var(--status-warning)] bg-[color:var(--status-warning-subtle)] text-[color:var(--status-warning)]',
                             inactive: 'border-border text-muted-foreground',
                           },
                           {
                             value: 'rejected',
                             label: 'Reject',
                             icon: XCircle,
-                            active: 'border-red-400 bg-red-50 text-red-900',
+                            active: 'border-[color:var(--status-error)] bg-[color:var(--status-error-subtle)] text-[color:var(--status-error)]',
                             inactive: 'border-border text-muted-foreground',
                           },
                         ] as const
@@ -665,7 +665,7 @@ export function ReviewPage() {
 
                     {/* Approval warning */}
                     {decision === 'approved' && delivery.evidence.length === 0 && (
-                      <div className="flex gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-900">
+                      <div className="flex gap-2 rounded-md border border-[color:var(--status-error)] bg-[color:var(--status-error-subtle)] px-3 py-2 text-xs text-[color:var(--status-error)]">
                         <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                         No evidence is attached. Approving without evidence is not recommended.
                       </div>
