@@ -8,7 +8,7 @@ import { defineConfig } from 'vite'
 const rootDir = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
-  base: '/', // Fixed for Vercel deployment and resolved TypeScript compilation error
+  base: process.env.GITHUB_ACTIONS === 'true' ? '/BIOTRACE/' : '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
