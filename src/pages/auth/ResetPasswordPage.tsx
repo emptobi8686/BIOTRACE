@@ -19,7 +19,9 @@ export function ResetPasswordPage() {
     try {
       const { error: resetError } = await getSupabaseClient().auth.resetPasswordForEmail(
         email.trim(),
-        { redirectTo: `${window.location.origin}/auth/callback?flow=recovery` },
+        {
+          redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}auth/callback?flow=recovery`,
+        },
       )
       if (resetError) throw resetError
       setSent(true)

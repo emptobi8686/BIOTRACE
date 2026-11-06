@@ -53,7 +53,7 @@ export function SignupPage() {
             full_name: validation.data.fullName,
             organization_type: selectedOrganizationType,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}auth/callback`,
         },
       })
       if (signupError) throw signupError

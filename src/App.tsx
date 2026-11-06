@@ -59,7 +59,7 @@ export default function App() {
   // ── Supabase mode: full auth + public routes ──────────────────────────────
   if (DATA_MODE === 'supabase') {
     return (
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <AuthProvider>
           <Routes>
             {/* ── Public routes (no auth required) ── */}
@@ -129,7 +129,7 @@ export default function App() {
 
   // ── Demo mode: public routes + demo app (no auth) ────────────────────────
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         {/* Public routes available in demo mode too */}
         <Route element={<PublicLayout />}>
